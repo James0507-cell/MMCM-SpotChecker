@@ -27,19 +27,28 @@ export default function LoginPage() {
       if (error) setError(error.message)
       else setError('Check your email for the confirmation link!')
     } else {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', (await supabase.auth.getUser()).data.user.id)
-        .single()
+      
+      if (authError) {
+        setError(authError.message)
+      } else if (data?.user) {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single()
 
-      if (profileError) setError(profileError.message)
-      else if (profile.role === 'admin') router.push('/admin')
-      else router.push('/counter')
+        if (profileError) {
+          setError("Profile not found. Please contact an admin.")
+        } else if (profile.role === 'admin') {
+          router.push('/admin')
+        } else {
+          router.push('/counter')
+        }
+      }
     }
     setLoading(false)
   }

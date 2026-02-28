@@ -45,6 +45,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     checkUser()
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData()
 
     const channel = supabase
