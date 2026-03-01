@@ -1,15 +1,17 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import { Search, SortAsc, SortDesc, MapPin, Users, Activity } from 'lucide-react'
+import { Search, SortAsc, SortDesc, MapPin, Users, Activity, X, Plus } from 'lucide-react'
 import Link from 'next/link'
+import { timSort } from '@/lib/sorting'
 
 export default function StudentDashboard() {
   const [facilities, setFacilities] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [sortBy, setSortBy] = useState('facility_name')
-  const [sortOrder, setSortOrder] = useState('asc')
+  const [sortStack, setSortStack] = useState([{ field: 'facility_name', order: 'asc' }])
+  const [selectedBuilding, setSelectedBuilding] = useState('all')
+  const [selectedOccupancyLevel, setSelectedOccupancyLevel] = useState('all')
   const [loading, setLoading] = useState(true)
 
   const fetchFacilities = useCallback(async () => {
@@ -46,37 +48,93 @@ export default function StudentDashboard() {
     }
   }, [fetchFacilities])
 
+  // Get unique buildings for the filter
+  const buildings = useMemo(() => {
+    const unique = ['all', ...new Set(facilities.map(f => f.building_name))]
+    return timSort(unique, (a, b) => {
+      if (a === 'all') return -1
+      if (b === 'all') return 1
+      return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+    })
+  }, [facilities])
+
   // Calculate Occupancy Level
   const getOccupancyLevel = (current, max) => {
     if (max === 0) return 0
     return Math.min(100, Math.round((current / max) * 100))
   }
 
-  // Filter & Sort Logic
-  const filteredFacilities = facilities
-    .filter((facility) =>
-      facility.facility_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      facility.building_name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => {
-      let valA = a[sortBy]
-      let valB = b[sortBy]
+  // Multi-level Sort Logic
+  const filteredFacilities = useMemo(() => {
+    const filtered = facilities.filter((facility) => {
+      const matchesSearch = 
+        facility.facility_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        facility.building_name.toLowerCase().includes(searchTerm.toLowerCase())
+      
+      const matchesBuilding = selectedBuilding === 'all' || facility.building_name === selectedBuilding
+      
+      const level = getOccupancyLevel(facility.current_occupancy, facility.max_occupancy)
+      let matchesLevel = true
+      if (selectedOccupancyLevel === 'available') matchesLevel = level < 70
+      else if (selectedOccupancyLevel === 'high') matchesLevel = level >= 70 && level < 95
+      else if (selectedOccupancyLevel === 'full') matchesLevel = level >= 95
 
-      if (sortBy === 'occupancy_level') {
-        valA = getOccupancyLevel(a.current_occupancy, a.max_occupancy)
-        valB = getOccupancyLevel(b.current_occupancy, b.max_occupancy)
+      return matchesSearch && matchesBuilding && matchesLevel
+    })
+
+    return timSort(filtered, (a, b) => {
+      for (const sort of sortStack) {
+        let valA = a[sort.field]
+        let valB = b[sort.field]
+
+        if (sort.field === 'occupancy_level') {
+          valA = getOccupancyLevel(a.current_occupancy, a.max_occupancy)
+          valB = getOccupancyLevel(b.current_occupancy, b.max_occupancy)
+        }
+
+        if (typeof valA === 'string' && typeof valB === 'string') {
+          const res = valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' })
+          if (res !== 0) {
+            return sort.order === 'asc' ? res : -res
+          }
+        } else {
+          if (valA < valB) return sort.order === 'asc' ? -1 : 1
+          if (valA > valB) return sort.order === 'asc' ? 1 : -1
+        }
       }
-
-      if (valA < valB) return sortOrder === 'asc' ? -1 : 1
-      if (valA > valB) return sortOrder === 'asc' ? 1 : -1
       return 0
     })
+  }, [facilities, searchTerm, sortStack, selectedBuilding, selectedOccupancyLevel])
+
+  const addSortLevel = () => {
+    setSortStack([...sortStack, { field: 'facility_name', order: 'asc' }])
+  }
+
+  const removeSortLevel = (index) => {
+    if (sortStack.length > 1) {
+      setSortStack(sortStack.filter((_, i) => i !== index))
+    }
+  }
+
+  const updateSortLevel = (index, updates) => {
+    const newStack = [...sortStack]
+    newStack[index] = { ...newStack[index], ...updates }
+    setSortStack(newStack)
+  }
 
   const getLevelColor = (level) => {
     if (level >= 90) return 'text-red-600 bg-red-50 border-red-200'
     if (level >= 70) return 'text-orange-600 bg-orange-50 border-orange-200'
     return 'text-green-600 bg-green-50 border-green-200'
   }
+
+  const sortOptions = [
+    { label: 'Facility Name', value: 'facility_name' },
+    { label: 'Building Name', value: 'building_name' },
+    { label: 'Occupancy Level', value: 'occupancy_level' },
+    { label: 'Occupancy Count', value: 'current_occupancy' },
+    { label: 'Max Occupancy', value: 'max_occupancy' },
+  ]
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
@@ -98,9 +156,9 @@ export default function StudentDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Controls */}
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
-          <div className="relative flex-grow">
+        {/* Search and Filters */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+          <div className="relative lg:col-span-1">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-5 w-5 text-gray-400" />
             </div>
@@ -113,23 +171,80 @@ export default function StudentDashboard() {
             />
           </div>
 
-          <div className="flex gap-2">
-            <select
-              className="block pl-3 pr-10 py-3 border border-gray-200 rounded-xl leading-5 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-            >
-              <option value="facility_name">Name</option>
-              <option value="building_name">Building</option>
-              <option value="occupancy_level">Occupancy Level</option>
-              <option value="current_occupancy">Current Count</option>
-            </select>
+          <div className="grid grid-cols-2 gap-4 lg:col-span-2">
+            <div className="flex flex-col gap-1.5">
+              <select
+                className="block w-full pl-3 pr-10 py-3 border border-gray-200 rounded-xl leading-5 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                value={selectedBuilding}
+                onChange={(e) => setSelectedBuilding(e.target.value)}
+              >
+                {buildings.map(b => (
+                  <option key={b} value={b}>{b === 'all' ? 'All Buildings' : b}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <select
+                className="block w-full pl-3 pr-10 py-3 border border-gray-200 rounded-xl leading-5 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                value={selectedOccupancyLevel}
+                onChange={(e) => setSelectedOccupancyLevel(e.target.value)}
+              >
+                <option value="all">All Statuses</option>
+                <option value="available">Available (&lt;70%)</option>
+                <option value="high">High (70-95%)</option>
+                <option value="full">Full (&gt;95%)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Sorting Controls */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
+              <SortAsc className="h-4 w-4" />
+              Sorting Priority
+            </h3>
             <button
-              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              className="p-3 border border-gray-200 rounded-xl bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm transition-colors"
+              onClick={addSortLevel}
+              className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition-colors flex items-center gap-1"
             >
-              {sortOrder === 'asc' ? <SortAsc className="h-5 w-5 text-gray-600" /> : <SortDesc className="h-5 w-5 text-gray-600" />}
+              <Plus className="h-3 w-3" />
+              Add Sort Level
             </button>
+          </div>
+          
+          <div className="flex flex-wrap gap-3">
+            {sortStack.map((sort, index) => (
+              <div key={index} className="flex items-center gap-2 bg-gray-50 p-2 rounded-xl border border-gray-100 animate-in fade-in slide-in-from-left-2">
+                <span className="text-xs font-bold text-gray-400 ml-1">{index + 1}.</span>
+                <select
+                  className="bg-transparent text-sm font-medium focus:outline-none border-none p-0 pr-6"
+                  value={sort.field}
+                  onChange={(e) => updateSortLevel(index, { field: e.target.value })}
+                >
+                  {sortOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => updateSortLevel(index, { order: sort.order === 'asc' ? 'desc' : 'asc' })}
+                  className="p-1 hover:bg-white rounded-md transition-colors"
+                  title={sort.order === 'asc' ? 'Ascending' : 'Descending'}
+                >
+                  {sort.order === 'asc' ? <SortAsc className="h-4 w-4 text-indigo-600" /> : <SortDesc className="h-4 w-4 text-indigo-600" />}
+                </button>
+                {sortStack.length > 1 && (
+                  <button
+                    onClick={() => removeSortLevel(index)}
+                    className="p-1 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-md transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
         </div>
 
