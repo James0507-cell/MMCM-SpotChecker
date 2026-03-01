@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Plus, Trash2, LogOut, Building2, LayoutDashboard, UserPlus, Users, ArrowRight, Activity, Search, Trash, Shield } from 'lucide-react'
 
 export default function AdminDashboard() {
@@ -120,9 +121,14 @@ export default function AdminDashboard() {
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
-            <div className="flex items-center gap-2">
-              <div className="bg-indigo-600 p-1.5 rounded-lg shadow-sm">
-                <LayoutDashboard className="h-5 w-5 text-white" />
+            <div className="flex items-center gap-3">
+              <div className="relative h-8 w-8">
+                <Image 
+                  src="/Logo-Final_noname_1 (3).png" 
+                  alt="MMCM Logo" 
+                  fill
+                  className="object-contain"
+                />
               </div>
               <span className="text-xl font-bold tracking-tight">Admin Control</span>
             </div>

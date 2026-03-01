@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { Plus, Minus, LogOut, Loader2, Activity } from 'lucide-react'
 
 export default function CounterDashboard() {
@@ -121,16 +122,26 @@ export default function CounterDashboard() {
   const percentage = Math.min(100, Math.round((facility.current_occupancy / facility.max_occupancy) * 100))
   
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-gray-950 text-white flex flex-col overflow-hidden">
       {/* Dynamic Header */}
-      <div className="p-6 border-b border-white/10 flex justify-between items-center">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight">{facility.facility_name}</h1>
-          <p className="text-xs font-medium uppercase tracking-widest text-indigo-400">{assignment.type} counter</p>
+      <div className="p-6 border-b border-white/10 flex justify-between items-center bg-gray-900/50 backdrop-blur-md sticky top-0 z-20">
+        <div className="flex items-center gap-3">
+          <div className="relative h-10 w-10">
+            <Image 
+              src="/Logo-Final_noname_1 (3).png" 
+              alt="MMCM Logo" 
+              fill
+              className="object-contain"
+            />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight">{facility.facility_name}</h1>
+            <p className="text-xs font-medium uppercase tracking-widest text-indigo-400">{assignment.type} counter</p>
+          </div>
         </div>
         <button 
           onClick={handleLogout}
-          className="p-3 bg-white/5 rounded-full hover:bg-white/10 transition-colors"
+          className="p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors border border-white/10"
         >
           <LogOut className="h-5 w-5 text-gray-400" />
         </button>

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Lock, Mail, Loader2, AlertCircle, Home } from 'lucide-react'
 
 export default function LoginPage() {
@@ -60,10 +61,16 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="mx-auto h-16 w-16 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200">
-          <Lock className="h-8 w-8 text-white" />
+        <div className="mx-auto h-24 w-24 relative mb-4">
+          <Image 
+            src="/Logo-Final_noname_1 (3).png" 
+            alt="MMCM Logo" 
+            fill
+            className="object-contain"
+            priority
+          />
         </div>
-        <h1 className="mt-6 text-3xl font-extrabold text-gray-900 tracking-tight">MMCM SpotChecker</h1>
+        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">MMCM SpotChecker</h1>
         <h2 className="mt-2 text-lg font-medium text-gray-600">
           {isSignUp ? 'Create an account' : 'Sign in to your account'}
         </h2>
