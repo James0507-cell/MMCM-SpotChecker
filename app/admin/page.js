@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Trash2, LogOut, Building2, LayoutDashboard, UserPlus, Users, ArrowRight, Activity, Search, Trash } from 'lucide-react'
+import { Plus, Trash2, LogOut, Building2, LayoutDashboard, UserPlus, Users, ArrowRight, Activity, Search, Trash, Shield } from 'lucide-react'
 
 export default function AdminDashboard() {
   const [facilities, setFacilities] = useState([])
@@ -12,6 +12,7 @@ export default function AdminDashboard() {
   const [assignments, setAssignments] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [userSearchTerm, setUserSearchTerm] = useState('')
   const [newFacility, setNewFacility] = useState({ building_name: '', facility_name: '', max_occupancy: '' })
   const [assignmentForm, setAssignmentForm] = useState({ user_id: '', facility_id: '', type: 'entry' })
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -33,7 +34,7 @@ export default function AdminDashboard() {
     setLoading(true)
     const [facs, profs, assigns] = await Promise.all([
       supabase.from('facilities').select('*').order('created_at', { ascending: false }),
-      supabase.from('profiles').select('*').eq('role', 'counter'),
+      supabase.from('profiles').select('*').order('role', { ascending: true }),
       supabase.from('counter_assignments').select('*, facilities(facility_name)')
     ])
 
@@ -51,10 +52,21 @@ export default function AdminDashboard() {
     const channel = supabase
       .channel('admin:realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'facilities' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => fetchData())
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
   }, [checkUser, fetchData])
+
+  const handleUpdateRole = async (userId, newRole) => {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ role: newRole })
+      .eq('id', userId)
+
+    if (error) alert(error.message)
+    else fetchData()
+  }
 
   const handleAddFacility = async (e) => {
     e.preventDefault()
@@ -154,6 +166,69 @@ export default function AdminDashboard() {
             <div>
               <p className="text-sm text-gray-500 font-medium">System Health</p>
               <p className="text-2xl font-bold">Stable</p>
+            </div>
+          </div>
+        </div>
+
+        {/* User Management Section */}
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              User Management
+              <span className="text-sm font-medium bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{profiles.length}</span>
+            </h2>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
+               <div className="relative">
+                  <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input 
+                    type="text" 
+                    placeholder="Search users by ID..." 
+                    className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    value={userSearchTerm}
+                    onChange={e => setUserSearchTerm(e.target.value)}
+                  />
+               </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-gray-50/50 border-b border-gray-100">
+                  <tr>
+                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">User ID</th>
+                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Role</th>
+                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {profiles.filter(p => p.id.toLowerCase().includes(userSearchTerm.toLowerCase())).map(profile => (
+                    <tr key={profile.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <span className="text-sm font-mono text-gray-600">{profile.id}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          profile.role === 'admin' ? 'bg-indigo-100 text-indigo-800' : 'bg-green-100 text-green-800'
+                        }`}>
+                          {profile.role === 'admin' ? <Shield className="h-3 w-3 mr-1" /> : <Users className="h-3 w-3 mr-1" />}
+                          {profile.role}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <select
+                          className="text-sm bg-white border border-gray-200 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-indigo-500"
+                          value={profile.role}
+                          onChange={(e) => handleUpdateRole(profile.id, e.target.value)}
+                        >
+                          <option value="counter">Counter</option>
+                          <option value="admin">Admin</option>
+                        </select>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
