@@ -15,7 +15,7 @@ export default function CounterPage({ params }) {
   const checkUser = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
-      router.push(`/login?redirect=/counter/${id}`)
+      router.push(`/?redirect=/counter/${id}`)
     }
   }, [id, router])
 

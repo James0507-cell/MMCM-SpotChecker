@@ -22,7 +22,7 @@ export default function AdminDashboard() {
   const checkUser = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
-      router.push('/login')
+      router.push('/')
       return
     }
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single()
@@ -113,7 +113,7 @@ export default function AdminDashboard() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
-    router.push('/login')
+    router.push('/')
   }
 
   return (
