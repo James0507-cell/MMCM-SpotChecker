@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Lock, Mail, Loader2, AlertCircle, Home, CheckCircle2 } from 'lucide-react'
+import { Lock, Mail, Loader2, AlertCircle, Home, CheckCircle2, ArrowRight } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -20,7 +20,6 @@ export default function LoginPage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Check for recovery hash in URL or PASSWORD_RECOVERY event
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         setIsResettingPassword(true)
@@ -60,7 +59,7 @@ export default function LoginPage() {
         password,
       })
       if (error) setError(error.message)
-      else setError('Check your email for the confirmation link!')
+      else setSuccess('Check your email for the confirmation link!')
     } else {
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
@@ -77,8 +76,6 @@ export default function LoginPage() {
           .single()
 
         if (profileError) {
-          // If profile not found, maybe it's a new user and trigger hasn't finished?
-          // Default to student/dashboard
           router.push('/dashboard')
         } else if (profile.role === 'admin') {
           router.push('/admin')
@@ -93,174 +90,175 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="mx-auto h-24 w-24 relative mb-4">
-          <Image 
-            src="/Logo-Final_noname_1 (3).png" 
-            alt="MMCM Logo" 
-            fill
-            className="object-contain"
-            priority
-          />
-        </div>
-        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">MMCM SpotChecker</h1>
-        <h2 className="mt-2 text-lg font-medium text-gray-600">
-          {isResettingPassword ? 'Set new password' : isForgotPassword ? 'Reset your password' : isSignUp ? 'Create an account' : 'Sign in to your account'}
-        </h2>
-        <p className="mt-2 text-sm text-gray-500">
-          {isResettingPassword ? (
-             'Please enter your new password below.'
-          ) : isForgotPassword ? (
-            <button
-              onClick={() => setIsForgotPassword(false)}
-              className="font-semibold text-indigo-600 hover:text-indigo-500 transition-colors"
-            >
-              Back to sign in
-            </button>
-          ) : (
-            <>
-              Or{' '}
-              <button
-                onClick={() => setIsSignUp(!isSignUp)}
-                className="font-semibold text-indigo-600 hover:text-indigo-500 transition-colors"
-              >
-                {isSignUp ? 'sign in instead' : 'create a new account'}
-              </button>
-            </>
-          )}
-        </p>
-      </div>
+    <div className="min-h-screen bg-[#f8fafc] flex flex-col justify-center relative overflow-hidden">
+      {/* Dynamic Background Elements */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-100/50 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-100/50 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-xl sm:rounded-3xl sm:px-10 border border-gray-100">
-          <form className="space-y-6" onSubmit={handleAuth}>
-            {error && (
-              <div className="rounded-xl bg-red-50 p-4 border border-red-100 animate-in fade-in slide-in-from-top-2">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <AlertCircle className="h-5 w-5 text-red-400" aria-hidden="true" />
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-red-800">
-                      {error}
-                    </p>
-                  </div>
-                </div>
+      <div className="relative z-10 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md mx-auto">
+          {/* Logo & Header */}
+          <div className="text-center mb-10">
+            <div className="inline-flex p-4 bg-white rounded-3xl shadow-xl shadow-indigo-100 mb-6 group transition-transform hover:scale-105 duration-300">
+              <div className="relative h-16 w-16">
+                <Image 
+                  src="/Logo-Final_noname_1 (3).png" 
+                  alt="MMCM Logo" 
+                  fill
+                  className="object-contain"
+                  priority
+                />
               </div>
-            )}
+            </div>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">
+              Spot<span className="text-indigo-600">Checker</span>
+            </h1>
+            <p className="text-slate-500 font-medium">Mapúa Malayan Colleges Mindanao</p>
+          </div>
 
-            {success && (
-              <div className="rounded-xl bg-green-50 p-4 border border-green-100 animate-in fade-in slide-in-from-top-2">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <CheckCircle2 className="h-5 w-5 text-green-400" aria-hidden="true" />
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-green-800">
-                      {success}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
+          {/* Form Card */}
+          <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-white p-10 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-indigo-500 via-blue-500 to-indigo-500" />
+            
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-slate-900">
+                {isResettingPassword ? 'Set new password' : isForgotPassword ? 'Reset password' : isSignUp ? 'Create account' : 'Welcome back'}
+              </h2>
+              <p className="text-slate-500 mt-1.5 text-sm font-medium">
+                {isResettingPassword ? (
+                   'Enter your new password to secure your account.'
+                ) : isForgotPassword ? (
+                  <button onClick={() => setIsForgotPassword(false)} className="text-indigo-600 hover:underline inline-flex items-center gap-1">
+                    Back to login <ArrowRight className="h-3 w-3" />
+                  </button>
+                ) : (
+                  <>
+                    {isSignUp ? 'Already have an account?' : 'Don\'t have an account?'}
+                    <button
+                      onClick={() => setIsSignUp(!isSignUp)}
+                      className="ml-1.5 font-bold text-indigo-600 hover:text-indigo-700 transition-colors"
+                    >
+                      {isSignUp ? 'Sign in' : 'Register now'}
+                    </button>
+                  </>
+                )}
+              </p>
+            </div>
 
-            {isResettingPassword ? (
-              <div>
-                <label htmlFor="new-password" name="new-password" className="block text-sm font-bold text-gray-700 ml-1 mb-1">
-                  New Password
-                </label>
-                <div className="relative rounded-xl shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                  </div>
-                  <input
-                    id="new-password"
-                    name="new-password"
-                    type="password"
-                    required
-                    className="block w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
-                    placeholder="••••••••"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                  />
+            <form className="space-y-6" onSubmit={handleAuth}>
+              {error && (
+                <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-800 text-sm font-semibold animate-in slide-in-from-top-2">
+                  <AlertCircle className="h-5 w-5 text-red-500 shrink-0" />
+                  {error}
                 </div>
-              </div>
-            ) : (
-              <>
-                <div>
-                  <label htmlFor="email" className="block text-sm font-bold text-gray-700 ml-1 mb-1">
-                    Email Address
-                  </label>
-                  <div className="relative rounded-xl shadow-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Mail className="h-5 w-5 text-gray-400" aria-hidden="true" />
+              )}
+
+              {success && (
+                <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center gap-3 text-emerald-800 text-sm font-semibold animate-in slide-in-from-top-2">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
+                  {success}
+                </div>
+              )}
+
+              {isResettingPassword ? (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">New Password</label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-indigo-500 text-slate-400">
+                      <Lock className="h-5 w-5" />
                     </div>
                     <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      autoComplete="email"
+                      type="password"
                       required
-                      className="block w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      className="block w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-transparent rounded-2xl focus:border-indigo-500 focus:bg-white focus:ring-0 transition-all outline-none font-medium placeholder-slate-400"
+                      placeholder="••••••••"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
                     />
                   </div>
                 </div>
-
-                {!isForgotPassword && (
-                  <div>
-                    <div className="flex items-center justify-between mb-1 ml-1">
-                      <label htmlFor="password" name="password" className="block text-sm font-bold text-gray-700">
-                        Password
-                      </label>
-                      {!isSignUp && (
-                        <button
-                          type="button"
-                          onClick={() => setIsForgotPassword(true)}
-                          className="text-xs font-semibold text-indigo-600 hover:text-indigo-500"
-                        >
-                          Forgot password?
-                        </button>
-                      )}
-                    </div>
-                    <div className="relative rounded-xl shadow-sm">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Lock className="h-5 w-5 text-gray-400" aria-hidden="true" />
+              ) : (
+                <>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-indigo-500 text-slate-400">
+                        <Mail className="h-5 w-5" />
                       </div>
                       <input
-                        id="password"
-                        name="password"
-                        type="password"
-                        autoComplete="current-password"
-                        required={!isForgotPassword}
-                        className="block w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm"
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        type="email"
+                        required
+                        className="block w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-transparent rounded-2xl focus:border-indigo-500 focus:bg-white focus:ring-0 transition-all outline-none font-medium placeholder-slate-400"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                       />
                     </div>
                   </div>
-                )}
-              </>
-            )}
 
-            <div>
+                  {!isForgotPassword && (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between px-1">
+                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Password</label>
+                        {!isSignUp && (
+                          <button
+                            type="button"
+                            onClick={() => setIsForgotPassword(true)}
+                            className="text-xs font-bold text-indigo-500 hover:text-indigo-600 transition-colors"
+                          >
+                            Forgot?
+                          </button>
+                        )}
+                      </div>
+                      <div className="relative group">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-indigo-500 text-slate-400">
+                          <Lock className="h-5 w-5" />
+                        </div>
+                        <input
+                          type="password"
+                          required={!isForgotPassword}
+                          className="block w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-transparent rounded-2xl focus:border-indigo-500 focus:bg-white focus:ring-0 transition-all outline-none font-medium placeholder-slate-400"
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-md text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-slate-900 hover:bg-black text-white py-4 rounded-2xl font-bold shadow-xl shadow-slate-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2 group disabled:opacity-70"
               >
-                {loading ? <Loader2 className="animate-spin h-5 w-5" /> : (isResettingPassword ? 'Update Password' : isForgotPassword ? 'Send Reset Link' : isSignUp ? 'Create Account' : 'Sign In')}
+                {loading ? (
+                  <Loader2 className="animate-spin h-5 w-5" />
+                ) : (
+                  <>
+                    {isResettingPassword ? 'Update Password' : isForgotPassword ? 'Send Reset Link' : isSignUp ? 'Create Account' : 'Sign In'}
+                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
               </button>
-            </div>
-          </form>
+            </form>
+          </div>
+
+          {/* Footer Info */}
+          <div className="mt-10 text-center space-y-4">
+             <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white shadow-sm border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all active:scale-95"
+              >
+                <Home className="h-4 w-4" />
+                View as Guest
+              </Link>
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">
+              &copy; {new Date().getFullYear()} MMCM SpotChecker
+            </p>
+          </div>
         </div>
-        <p className="mt-8 text-center text-xs text-gray-400">
-          &copy; {new Date().getFullYear()} MMCM SpotChecker. All rights reserved.
-        </p>
       </div>
     </div>
   )
