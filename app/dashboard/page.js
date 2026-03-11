@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import { Search, SortAsc, SortDesc, MapPin, Users, Activity, X, Plus, LogOut, LayoutDashboard, Shield } from 'lucide-react'
+import { Search, SortAsc, SortDesc, MapPin, Users, Activity, X, Plus, LogOut, LayoutDashboard, Shield, Key } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { timSort } from '@/lib/sorting'
+import ChangePasswordModal from '@/components/ChangePasswordModal'
 
 export default function StudentDashboard() {
   const [facilities, setFacilities] = useState([])
@@ -17,6 +18,7 @@ export default function StudentDashboard() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState(null)
   const [userRole, setUserRole] = useState(null)
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
   const router = useRouter()
 
   const fetchUser = useCallback(async () => {
@@ -239,6 +241,13 @@ export default function StudentDashboard() {
                   </Link>
                 )}
                 <button 
+                  onClick={() => setIsPasswordModalOpen(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all"
+                >
+                  <Key className="h-4 w-4" />
+                  Password
+                </button>
+                <button 
                   onClick={handleLogout} 
                   className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-all"
                 >
@@ -254,6 +263,11 @@ export default function StudentDashboard() {
           </div>
         </div>
       </header>
+
+      <ChangePasswordModal 
+        isOpen={isPasswordModalOpen} 
+        onClose={() => setIsPasswordModalOpen(false)} 
+      />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Search and Filters */}

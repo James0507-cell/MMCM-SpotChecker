@@ -35,8 +35,8 @@ export default function AdminDashboard() {
     setLoading(true)
     const [facs, profs, assigns] = await Promise.all([
       supabase.from('facilities').select('*').order('created_at', { ascending: false }),
-      supabase.from('profiles').select('*').order('role', { ascending: true }),
-      supabase.from('counter_assignments').select('*, facilities(facility_name)')
+      supabase.from('profiles_with_emails').select('*').order('role', { ascending: true }),
+      supabase.from('counter_assignments').select('*, facilities(facility_name), profiles_with_emails(email)')
     ])
 
     if (facs.data) setFacilities(facs.data)
@@ -191,7 +191,7 @@ export default function AdminDashboard() {
                   <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input 
                     type="text" 
-                    placeholder="Search users by ID..." 
+                    placeholder="Search users by email..." 
                     className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                     value={userSearchTerm}
                     onChange={e => setUserSearchTerm(e.target.value)}
@@ -202,16 +202,19 @@ export default function AdminDashboard() {
               <table className="w-full text-left">
                 <thead className="bg-gray-50/50 border-b border-gray-100">
                   <tr>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">User ID</th>
+                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">User</th>
                     <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Role</th>
                     <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {profiles.filter(p => p.id.toLowerCase().includes(userSearchTerm.toLowerCase())).map(profile => (
+                  {profiles.filter(p => p.email.toLowerCase().includes(userSearchTerm.toLowerCase())).map(profile => (
                     <tr key={profile.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
-                        <span className="text-sm font-mono text-gray-600">{profile.id}</span>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-gray-900">{profile.email}</span>
+                          <span className="text-[10px] font-mono text-gray-400">{profile.id}</span>
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -227,6 +230,7 @@ export default function AdminDashboard() {
                           value={profile.role}
                           onChange={(e) => handleUpdateRole(profile.id, e.target.value)}
                         >
+                          <option value="student">Student</option>
                           <option value="counter">Counter</option>
                           <option value="admin">Admin</option>
                         </select>
@@ -339,9 +343,9 @@ export default function AdminDashboard() {
                     required
                     onChange={e => setAssignmentForm({...assignmentForm, user_id: e.target.value})}
                   >
-                    <option value="">Select User ID...</option>
-                    {profiles.map(p => (
-                      <option key={p.id} value={p.id}>{p.id.slice(0, 13)}...</option>
+                    <option value="">Select Counter...</option>
+                    {profiles.filter(p => p.role === 'counter').map(p => (
+                      <option key={p.id} value={p.id}>{p.email}</option>
                     ))}
                   </select>
                   <select 
@@ -369,7 +373,7 @@ export default function AdminDashboard() {
                   </button>
                </form>
                <p className="text-[10px] text-gray-400 font-medium leading-relaxed">
-                 Note: Users must register an account first. Use their UUID to assign them to a facility.
+                 Note: Only users with the "Counter" role appear in the dropdown.
                </p>
             </div>
 
@@ -381,7 +385,7 @@ export default function AdminDashboard() {
                        <div className={`h-2 w-2 rounded-full ${a.type === 'entry' ? 'bg-green-500' : 'bg-red-500'}`} />
                        <div>
                           <p className="text-sm font-bold">{a.facilities?.facility_name}</p>
-                          <p className="text-[10px] text-gray-400 font-mono">{a.user_id.slice(0, 13)}...</p>
+                          <p className="text-[10px] text-gray-400 font-medium">{a.profiles_with_emails?.email}</p>
                        </div>
                     </div>
                     <button onClick={() => handleDeleteAssignment(a.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-red-600">
